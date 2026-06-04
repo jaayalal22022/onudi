@@ -6,10 +6,10 @@ import plotly.express as px
 
 st.set_page_config(page_title="Analytics ENESEM", page_icon="📊", layout="wide")
 
-st.title("📊 Consolidador y Visor Evolutivo ENESEM")
+st.title("📊Visualizador ONUDI - ENESEM")
 st.markdown("""
 Esta herramienta consolida los tabulados de Manufactura y Minería, y permite analizar 
-la evolución temporal de las variables por cada código CIIU de forma interactiva.
+la evolución de las variables por cada código CIIU.
 """)
 
 
@@ -119,7 +119,6 @@ def procesar_manufactura_df(df_raw, nombre_pestana):
 
     return df_melted
 
-
 # ==========================================
 # Carga de Datos y Consolidación
 # ==========================================
@@ -127,7 +126,7 @@ st.sidebar.header("📁 Carga de Datos")
 archivo_subido = st.sidebar.file_uploader("Sube el archivo Excel (.xls o .xlsx)", type=['xls', 'xlsx'])
 
 if archivo_subido:
-    with st.spinner("Procesando matriz estructural..."):
+    with st.spinner("Procesando matriz..."):
         try:
             diccionario_hojas = pd.read_excel(archivo_subido, sheet_name=None, header=None)
             
@@ -162,7 +161,7 @@ if archivo_subido:
                 
                 df_consolidado = df_consolidado.sort_values(by=['Año', 'CIIU'])
                 
-                st.sidebar.success("📊 ¡Base estructurada correctamente!")
+                st.sidebar.success("📊Base cargada correctamente")
                 
                 # ==========================================
                 # Panel de Control de Filtros (Sidebar)
@@ -220,7 +219,7 @@ if archivo_subido:
                         
                         st.plotly_chart(fig, use_container_width=True)
                     else:
-                        st.warning("Por favor, selecciona al menos un código CIIU en el panel izquierdo para generar el gráfico.")
+                        st.warning("Por favor, seleccione al menos un código CIIU en el panel izquierdo para generar el gráfico.")
                         
                 with tab2:
                     st.subheader("Registros Consolidados Filtrados")
@@ -229,7 +228,7 @@ if archivo_subido:
                     st.markdown("---")
                     csv = df_consolidado.to_csv(index=False).encode('utf-8')
                     st.download_button(
-                        label="📥 Descargar Base Completa en CSV",
+                        label="📥 Descargar Base en CSV",
                         data=csv,
                         file_name="Base_Consolidada_ENESEM.csv",
                         mime="text/csv",
@@ -238,5 +237,5 @@ if archivo_subido:
         except Exception as e:
             st.error(f"Ocurrió un error al procesar el Excel: {e}")
 else:
-    st.info("Por favor, sube el archivo Excel original en el panel izquierdo para comenzar.")
+    st.info("Por favor, suba el archivo Excel original en el panel izquierdo para comenzar.")
 
