@@ -226,7 +226,7 @@ if archivo_subido:
                         # 2. DESPLEGABLE CON EL RESTO DE CIIU (No seleccionados)
                         # ==========================================
                         with st.expander("👀 Explorar esta variable en el RESTO de industrias (No seleccionadas)"):
-                            st.markdown(f"Esta vista te permite analizar rápidamente la tendencia de **{variable_sel}** en las demás ramas industriales que no están en el gráfico principal.")
+                            st.markdown(f"Esta vista permite la tendencia de **{variable_sel}** en los demás CIIU.")
                             
                             # Filtramos los datos para excluir (~) los CIIU que el usuario ya seleccionó
                             df_otros_ciiu = df_filtrado_var[~df_filtrado_var['CIIU_Etiqueta'].isin(ciiu_sel)]
