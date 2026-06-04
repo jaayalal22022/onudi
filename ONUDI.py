@@ -202,7 +202,7 @@ if archivo_subido:
                     
                     if not df_final_ui.empty:
                         # ==========================================
-                        # 1. GRÁFICO PRINCIPAL
+                        # 1. GRÁFICO PRINCIPAL (Los seleccionados)
                         # ==========================================
                         fig = px.line(
                             df_final_ui, 
@@ -211,7 +211,7 @@ if archivo_subido:
                             color='CIIU_Etiqueta',
                             markers=True,
                             labels={'Valor': 'Cantidad / Valor Registrado', 'Año': 'Año de Referencia', 'CIIU_Etiqueta': 'Código CIIU / Rama'},
-                            title=f"Tendencia Temporal - Sector {sector_sel}"
+                            title=f"Tendencias Principales - Sector {sector_sel}"
                         )
                         
                         fig.update_layout(
@@ -223,54 +223,55 @@ if archivo_subido:
                         st.plotly_chart(fig, use_container_width=True)
                         
                         # ==========================================
-                        # 2. DESPLEGABLE CON TODAS LAS VARIABLES (Mini-Dashboard)
+                        # 2. DESPLEGABLE CON EL RESTO DE CIIU (No seleccionados)
                         # ==========================================
-                        with st.expander("📉 Ver comportamiento de TODAS las variables para los CIIU seleccionados"):
-                            st.markdown("Esta vista te permite analizar el perfil completo de las ramas seleccionadas a través de todos los indicadores de la encuesta.")
+                        with st.expander("👀 Explorar esta variable en el RESTO de industrias (No seleccionadas)"):
+                            st.markdown(f"Esta vista te permite analizar rápidamente la tendencia de **{variable_sel}** en las demás ramas industriales que no están en el gráfico principal.")
                             
-                            # Preparamos el dataframe del sector completo con las etiquetas combinadas
-                            df_sec_completo = df_filtrado_sec.copy()
-                            df_sec_completo['CIIU_Etiqueta'] = df_sec_completo['CIIU'] + " - " + df_sec_completo['INDUSTRIA']
+                            # Filtramos los datos para excluir (~) los CIIU que el usuario ya seleccionó
+                            df_otros_ciiu = df_filtrado_var[~df_filtrado_var['CIIU_Etiqueta'].isin(ciiu_sel)]
                             
-                            # Filtramos para quedarnos solo con los CIIU que el usuario seleccionó en la barra lateral
-                            df_grid = df_sec_completo[df_sec_completo['CIIU_Etiqueta'].isin(ciiu_sel)]
+                            # Obtenemos la lista única de esos CIIU sobrantes
+                            otros_ciiu_lista = sorted([str(x) for x in df_otros_ciiu['CIIU_Etiqueta'].unique() if str(x) != 'nan - nan'])
                             
-                            if not df_grid.empty:
-                                # Creamos dos columnas para que los gráficos se acomoden lado a lado
+                            if not df_otros_ciiu.empty and len(otros_ciiu_lista) > 0:
+                                # Creamos dos columnas
                                 col1, col2 = st.columns(2)
                                 
-                                # Iteramos sobre todas las variables posibles del sector
-                                for idx, var_loop in enumerate(opciones_variable):
-                                    df_mini = df_grid[df_grid['Variable'] == var_loop]
+                                # Iteramos sobre cada CIIU que no fue seleccionado
+                                for idx, ciiu_loop in enumerate(otros_ciiu_lista):
+                                    df_mini = df_otros_ciiu[df_otros_ciiu['CIIU_Etiqueta'] == ciiu_loop]
                                     
                                     if not df_mini.empty:
                                         fig_mini = px.line(
                                             df_mini, 
                                             x='Año', 
                                             y='Valor', 
-                                            color='CIIU_Etiqueta',
                                             markers=True,
-                                            title=f"{var_loop}"
+                                            title=f"{ciiu_loop}"
                                         )
                                         
-                                        # Ajustes visuales para los gráficos pequeños
+                                        # Ajustes visuales
                                         fig_mini.update_layout(
                                             hovermode="x unified",
-                                            showlegend=False, # Ocultamos la leyenda aquí para no saturar (ya está en el gráfico principal)
                                             xaxis=dict(type='category'),
                                             margin=dict(l=10, r=10, t=40, b=10),
-                                            title_font=dict(size=12) # Título un poco más pequeño
+                                            title_font=dict(size=12) # Letra más pequeña para que quepa bien el texto de la industria
                                         )
                                         
-                                        # Distribuir los gráficos alternando entre la columna 1 y la columna 2
+                                        # Le damos un color neutro (gris) para diferenciarlos psicológicamente de los principales
+                                        fig_mini.update_traces(line_color='#8C8C8C') 
+                                        
+                                        # Alternamos entre columna 1 y 2
                                         if idx % 2 == 0:
                                             col1.plotly_chart(fig_mini, use_container_width=True)
                                         else:
                                             col2.plotly_chart(fig_mini, use_container_width=True)
                             else:
-                                st.info("No hay datos suficientes para generar el desglose.")
+                                st.info("Has seleccionado todos los CIIU disponibles para esta variable, no hay más industrias que mostrar.")
                     else:
                         st.warning("Por favor, selecciona al menos un código CIIU en el panel izquierdo para generar el gráfico.")
+
 
                         
                 with tab2:
