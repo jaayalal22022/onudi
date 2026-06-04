@@ -4,7 +4,7 @@ import numpy as np
 import re
 import plotly.express as px
 
-st.set_page_config(page_title="Analytics ENESEM", page_icon="📊", layout="wide")
+st.set_page_config(page_title="ENESEM", page_icon="📊", layout="wide")
 
 st.title("📊Visualizador ONUDI - ENESEM")
 st.markdown("""
