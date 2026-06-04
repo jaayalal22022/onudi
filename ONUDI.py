@@ -201,6 +201,9 @@ if archivo_subido:
                     st.subheader(f"Evolución de: {variable_sel}")
                     
                     if not df_final_ui.empty:
+                        # ==========================================
+                        # 1. GRÁFICO PRINCIPAL
+                        # ==========================================
                         fig = px.line(
                             df_final_ui, 
                             x='Año', 
@@ -218,8 +221,57 @@ if archivo_subido:
                         )
                         
                         st.plotly_chart(fig, use_container_width=True)
+                        
+                        # ==========================================
+                        # 2. DESPLEGABLE CON TODAS LAS VARIABLES (Mini-Dashboard)
+                        # ==========================================
+                        with st.expander("📉 Ver comportamiento de TODAS las variables para los CIIU seleccionados"):
+                            st.markdown("Esta vista te permite analizar el perfil completo de las ramas seleccionadas a través de todos los indicadores de la encuesta.")
+                            
+                            # Preparamos el dataframe del sector completo con las etiquetas combinadas
+                            df_sec_completo = df_filtrado_sec.copy()
+                            df_sec_completo['CIIU_Etiqueta'] = df_sec_completo['CIIU'] + " - " + df_sec_completo['INDUSTRIA']
+                            
+                            # Filtramos para quedarnos solo con los CIIU que el usuario seleccionó en la barra lateral
+                            df_grid = df_sec_completo[df_sec_completo['CIIU_Etiqueta'].isin(ciiu_sel)]
+                            
+                            if not df_grid.empty:
+                                # Creamos dos columnas para que los gráficos se acomoden lado a lado
+                                col1, col2 = st.columns(2)
+                                
+                                # Iteramos sobre todas las variables posibles del sector
+                                for idx, var_loop in enumerate(opciones_variable):
+                                    df_mini = df_grid[df_grid['Variable'] == var_loop]
+                                    
+                                    if not df_mini.empty:
+                                        fig_mini = px.line(
+                                            df_mini, 
+                                            x='Año', 
+                                            y='Valor', 
+                                            color='CIIU_Etiqueta',
+                                            markers=True,
+                                            title=f"{var_loop}"
+                                        )
+                                        
+                                        # Ajustes visuales para los gráficos pequeños
+                                        fig_mini.update_layout(
+                                            hovermode="x unified",
+                                            showlegend=False, # Ocultamos la leyenda aquí para no saturar (ya está en el gráfico principal)
+                                            xaxis=dict(type='category'),
+                                            margin=dict(l=10, r=10, t=40, b=10),
+                                            title_font=dict(size=12) # Título un poco más pequeño
+                                        )
+                                        
+                                        # Distribuir los gráficos alternando entre la columna 1 y la columna 2
+                                        if idx % 2 == 0:
+                                            col1.plotly_chart(fig_mini, use_container_width=True)
+                                        else:
+                                            col2.plotly_chart(fig_mini, use_container_width=True)
+                            else:
+                                st.info("No hay datos suficientes para generar el desglose.")
                     else:
-                        st.warning("Por favor, seleccione al menos un código CIIU en el panel izquierdo para generar el gráfico.")
+                        st.warning("Por favor, selecciona al menos un código CIIU en el panel izquierdo para generar el gráfico.")
+
                         
                 with tab2:
                     st.subheader("Registros Consolidados Filtrados")
