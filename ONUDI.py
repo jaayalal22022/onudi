@@ -73,7 +73,7 @@ def procesar_manufactura_df(df_raw, nombre_pestana):
         'Cuad.03': 'NUMERO DE PERSONAS OCUPADAS',
         'Cuad.04': 'NUMERO DE EMPLEADOS, ADMINISTRATIVOS Y OBREROS',
         'Cuad.05': 'SUELDOS Y SALARIOS PAGADOS',
-        'Cuad.11': 'PRODUCCION (Output at basic prices)',
+        'Cuad.11': 'PRODUCCION ',
         'Cuad.17': 'VALOR AGREGADO ',
         'Cuad.21': 'FORMACION BRUTA DE CAPITAL FIJO',
         'Cuad.31': 'NUMERO DE MUJERES EMPLEADAS, ADMINISTRATIVAS Y OBRERAS'
