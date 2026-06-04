@@ -130,10 +130,10 @@ if archivo_subido:
     with st.spinner("Procesando matriz estructural..."):
         try:
             diccionario_hojas = pd.read_excel(archivo_subido, sheet_name=None, header=None)
-
+            
             df_mineria = pd.DataFrame()
             dfs_manufactura = []
-
+            
             for nombre_pestana, df_raw in diccionario_hojas.items():
                 if 'metadatos' in nombre_pestana.lower():
                     continue
@@ -143,88 +143,89 @@ if archivo_subido:
                     df_temp = procesar_manufactura_df(df_raw, nombre_pestana)
                     if not df_temp.empty:
                         dfs_manufactura.append(df_temp)
-
+            
             df_manufactura = pd.concat(dfs_manufactura, ignore_index=True) if dfs_manufactura else pd.DataFrame()
-
+            
             if not df_mineria.empty or not df_manufactura.empty:
                 df_consolidado = pd.concat([df_mineria, df_manufactura], ignore_index=True)
-
-                # Estandarización de tipos de datos
-                df_consolidado['Valor'] = pd.to_numeric(
-                    df_consolidado['Valor'].astype(str).str.replace(',', '').str.replace('*', ''), errors='coerce')
-                df_consolidado['CIIU'] = df_consolidado['CIIU'].astype(str).str.replace('.0', '',
-                                                                                        regex=False).str.strip()
+                
+                # --- SOLUCIÓN AL ERROR: Forzar todo a string para evitar conflictos str vs float ---
+                df_consolidado['Valor'] = pd.to_numeric(df_consolidado['Valor'].astype(str).str.replace(',', '').str.replace('*', ''), errors='coerce')
+                df_consolidado['CIIU'] = df_consolidado['CIIU'].astype(str).str.replace('.0', '', regex=False).str.strip()
                 df_consolidado['Año'] = df_consolidado['Año'].astype(str).str.replace('.0', '', regex=False).str.strip()
+                df_consolidado['INDUSTRIA'] = df_consolidado['INDUSTRIA'].astype(str).str.strip()
+                df_consolidado['Sector'] = df_consolidado['Sector'].astype(str).str.strip()
+                df_consolidado['Variable'] = df_consolidado['Variable'].astype(str).str.strip()
+                
+                # Eliminar filas basura que pudieron generarse al final del Excel en la nube
+                df_consolidado = df_consolidado[df_consolidado['CIIU'] != 'nan']
+                
                 df_consolidado = df_consolidado.sort_values(by=['Año', 'CIIU'])
-
+                
                 st.sidebar.success("📊 ¡Base estructurada correctamente!")
-
+                
                 # ==========================================
                 # Panel de Control de Filtros (Sidebar)
                 # ==========================================
                 st.sidebar.header("🎯 Filtros de Visualización")
-
-                sector_sel = st.sidebar.selectbox("1. Selecciona el Sector", options=df_consolidado['Sector'].unique())
+                
+                # Asegurar que las listas desplegables se ordenen correctamente casteando a str
+                opciones_sector = sorted([str(x) for x in df_consolidado['Sector'].unique()])
+                sector_sel = st.sidebar.selectbox("1. Selecciona el Sector", options=opciones_sector)
                 df_filtrado_sec = df_consolidado[df_consolidado['Sector'] == sector_sel]
-
-                variable_sel = st.sidebar.selectbox("2. Selecciona la Variable",
-                                                    options=df_filtrado_sec['Variable'].unique())
+                
+                opciones_variable = sorted([str(x) for x in df_filtrado_sec['Variable'].unique()])
+                variable_sel = st.sidebar.selectbox("2. Selecciona la Variable", options=opciones_variable)
                 df_filtrado_var = df_filtrado_sec[df_filtrado_sec['Variable'] == variable_sel]
-
-                # Crear etiqueta combinada 'CIIU - Nombre' para facilitar la selección al usuario
-                df_filtrado_var['CIIU_Etiqueta'] = df_filtrado_var['CIIU'] + " - " + df_filtrado_var[
-                    'INDUSTRIA'].astype(str)
-                opciones_ciiu = sorted(df_filtrado_var['CIIU_Etiqueta'].unique())
-
-                # Por defecto seleccionamos las primeras 3 para que el gráfico no nazca vacío ni saturado
+                
+                # Crear etiqueta combinada
+                df_filtrado_var['CIIU_Etiqueta'] = df_filtrado_var['CIIU'] + " - " + df_filtrado_var['INDUSTRIA']
+                
+                # --- SOLUCIÓN AL ERROR: Ordenar usando una comprensión de listas en formato string ---
+                opciones_ciiu = sorted([str(x) for x in df_filtrado_var['CIIU_Etiqueta'].unique() if str(x) != 'nan - nan'])
+                
+                # Por defecto seleccionamos las primeras 3
                 ciiu_sel = st.sidebar.multiselect(
-                    "3. Selecciona Códigos CIIU a comparar",
+                    "3. Selecciona Códigos CIIU a comparar", 
                     options=opciones_ciiu,
                     default=opciones_ciiu[:3] if len(opciones_ciiu) >= 3 else opciones_ciiu
                 )
-
-                # Filtrado final para visualización
+                
                 df_final_ui = df_filtrado_var[df_filtrado_var['CIIU_Etiqueta'].isin(ciiu_sel)]
-
+                
                 # ==========================================
                 # Pestañas de la Interfaz Principal
                 # ==========================================
                 tab1, tab2 = st.tabs(["📈 Evolución Temporal", "📋 Datos Consolidados"])
-
+                
                 with tab1:
                     st.subheader(f"Evolución de: {variable_sel}")
-
+                    
                     if not df_final_ui.empty:
-                        # Generación del gráfico de líneas interactivo con Plotly
                         fig = px.line(
-                            df_final_ui,
-                            x='Año',
-                            y='Valor',
+                            df_final_ui, 
+                            x='Año', 
+                            y='Valor', 
                             color='CIIU_Etiqueta',
                             markers=True,
-                            labels={'Valor': 'Cantidad / Valor Registrado', 'Año': 'Año de Referencia',
-                                    'CIIU_Etiqueta': 'Código CIIU / Rama'},
+                            labels={'Valor': 'Cantidad / Valor Registrado', 'Año': 'Año de Referencia', 'CIIU_Etiqueta': 'Código CIIU / Rama'},
                             title=f"Tendencia Temporal - Sector {sector_sel}"
                         )
-
-                        # Mejoras visuales al gráfico
+                        
                         fig.update_layout(
                             hovermode="x unified",
                             legend=dict(orientation="h", yanchor="bottom", y=-0.5, xanchor="left", x=0),
-                            xaxis=dict(type='category')  # Forza a que los años se traten de forma discreta
+                            xaxis=dict(type='category')
                         )
-
+                        
                         st.plotly_chart(fig, use_container_width=True)
                     else:
-                        st.warning(
-                            "Por favor, selecciona al menos un código CIIU en el panel izquierdo para generar el gráfico.")
-
+                        st.warning("Por favor, selecciona al menos un código CIIU en el panel izquierdo para generar el gráfico.")
+                        
                 with tab2:
                     st.subheader("Registros Consolidados Filtrados")
-                    st.dataframe(df_final_ui[['CIIU', 'INDUSTRIA', 'Año', 'Variable', 'Valor']],
-                                 use_container_width=True)
-
-                    # Descarga de la base de datos completa o filtrada
+                    st.dataframe(df_final_ui[['CIIU', 'INDUSTRIA', 'Año', 'Variable', 'Valor']], use_container_width=True)
+                    
                     st.markdown("---")
                     csv = df_consolidado.to_csv(index=False).encode('utf-8')
                     st.download_button(
@@ -233,8 +234,9 @@ if archivo_subido:
                         file_name="Base_Consolidada_ENESEM.csv",
                         mime="text/csv",
                     )
-
+                    
         except Exception as e:
             st.error(f"Ocurrió un error al procesar el Excel: {e}")
 else:
     st.info("Por favor, sube el archivo Excel original en el panel izquierdo para comenzar.")
+
