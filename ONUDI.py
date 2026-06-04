@@ -123,7 +123,7 @@ def procesar_manufactura_df(df_raw, nombre_pestana):
 # Carga de Datos y Consolidación
 # ==========================================
 st.sidebar.header("📁 Carga de Datos")
-archivo_subido = st.sidebar.file_uploader("Sube el archivo Excel (.xls o .xlsx)", type=['xls', 'xlsx'])
+archivo_subido = st.sidebar.file_uploader("Suba el archivo Excel (.xls o .xlsx)", type=['xls', 'xlsx'])
 
 if archivo_subido:
     with st.spinner("Procesando matriz..."):
@@ -170,11 +170,11 @@ if archivo_subido:
                 
                 # Asegurar que las listas desplegables se ordenen correctamente casteando a str
                 opciones_sector = sorted([str(x) for x in df_consolidado['Sector'].unique()])
-                sector_sel = st.sidebar.selectbox("1. Selecciona el Sector", options=opciones_sector)
+                sector_sel = st.sidebar.selectbox("1. Seleccione el Sector", options=opciones_sector)
                 df_filtrado_sec = df_consolidado[df_consolidado['Sector'] == sector_sel]
                 
                 opciones_variable = sorted([str(x) for x in df_filtrado_sec['Variable'].unique()])
-                variable_sel = st.sidebar.selectbox("2. Selecciona la Variable", options=opciones_variable)
+                variable_sel = st.sidebar.selectbox("2. Seleccione la Variable", options=opciones_variable)
                 df_filtrado_var = df_filtrado_sec[df_filtrado_sec['Variable'] == variable_sel]
                 
                 # Crear etiqueta combinada
@@ -185,7 +185,7 @@ if archivo_subido:
                 
                 # Por defecto seleccionamos las primeras 3
                 ciiu_sel = st.sidebar.multiselect(
-                    "3. Selecciona Códigos CIIU a comparar", 
+                    "3. Seleccione Códigos CIIU a comparar", 
                     options=opciones_ciiu,
                     default=opciones_ciiu[:3] if len(opciones_ciiu) >= 3 else opciones_ciiu
                 )
@@ -195,7 +195,7 @@ if archivo_subido:
                 # ==========================================
                 # Pestañas de la Interfaz Principal
                 # ==========================================
-                tab1, tab2 = st.tabs(["📈 Evolución Temporal", "📋 Datos Consolidados"])
+                tab1, tab2 = st.tabs(["📈 Evolución Anual", "📋 Datos Consolidados"])
                 
                 with tab1:
                     st.subheader(f"Evolución de: {variable_sel}")
